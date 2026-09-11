@@ -1,4 +1,5 @@
-"""Professional glassmorphism theme, navy blue top navbar, dark mode, and layout styles."""
+"""Professional glassmorphism theme and layout styles. Light mode only -- the app has
+no theme toggle; these are the sole, permanent token values."""
 
 from __future__ import annotations
 
@@ -7,56 +8,26 @@ import streamlit as st
 from risk_engine import RISK_COLORS
 
 THEME_VARS = {
-    "light": {
-        "bg_gradient": "linear-gradient(135deg, #eef2f7 0%, #e0e7ff 50%, #e2e8f0 100%)",
-        "card_bg": "rgba(255, 255, 255, 0.62)",
-        "card_bg_strong": "rgba(255, 255, 255, 0.82)",
-        "card_border": "rgba(255, 255, 255, 0.72)",
-        "card_shadow": "0 8px 32px rgba(31, 38, 135, 0.08)",
-        "glass_btn_bg": "rgba(255, 255, 255, 0.42)",
-        "glass_btn_border": "rgba(255, 255, 255, 0.55)",
-        "text_primary": "#0f172a",
-        "text_secondary": "#475569",
-        "text_muted": "#64748b",
-        "accent": "#2563eb",
-        "accent_soft": "rgba(37, 99, 235, 0.12)",
-        "input_bg": "rgba(255, 255, 255, 0.85)",
-        "divider": "rgba(15, 23, 42, 0.08)",
-        "chart_line": "#2563eb",
-    },
-    "dark": {
-        "bg_gradient": "linear-gradient(135deg, #0a0f1d 0%, #10192b 48%, #152238 100%)",
-        "card_bg": "rgba(21, 34, 56, 0.55)",
-        "card_bg_strong": "rgba(21, 34, 56, 0.82)",
-        "card_border": "rgba(255, 255, 255, 0.14)",
-        "card_shadow": "0 8px 32px rgba(0, 0, 0, 0.38)",
-        "glass_btn_bg": "rgba(255, 255, 255, 0.08)",
-        "glass_btn_border": "rgba(255, 255, 255, 0.16)",
-        "text_primary": "#f8fafc",
-        "text_secondary": "#cbd5e1",
-        "text_muted": "#94a3b8",
-        "accent": "#3b82f6",
-        "accent_soft": "rgba(59, 130, 246, 0.18)",
-        "input_bg": "rgba(15, 23, 42, 0.75)",
-        "divider": "rgba(255, 255, 255, 0.10)",
-        "chart_line": "#3b82f6",
-    },
+    "bg_gradient": "linear-gradient(135deg, #eef2f7 0%, #e0e7ff 50%, #e2e8f0 100%)",
+    "card_bg": "rgba(255, 255, 255, 0.62)",
+    "card_bg_strong": "rgba(255, 255, 255, 0.82)",
+    "card_border": "rgba(255, 255, 255, 0.72)",
+    "card_shadow": "0 8px 32px rgba(31, 38, 135, 0.08)",
+    "glass_btn_bg": "rgba(255, 255, 255, 0.42)",
+    "glass_btn_border": "rgba(255, 255, 255, 0.55)",
+    "text_primary": "#0f172a",
+    "text_secondary": "#475569",
+    "text_muted": "#64748b",
+    "accent": "#2563eb",
+    "accent_soft": "rgba(37, 99, 235, 0.12)",
+    "input_bg": "rgba(255, 255, 255, 0.85)",
+    "divider": "rgba(15, 23, 42, 0.08)",
+    "chart_line": "#2563eb",
 }
 
 
-def init_theme() -> None:
-    if "dark_mode" not in st.session_state:
-        st.session_state.dark_mode = False
-
-
-def is_dark_mode() -> bool:
-    init_theme()
-    return bool(st.session_state.dark_mode)
-
-
 def inject_custom_css() -> None:
-    dark = is_dark_mode()
-    t = THEME_VARS["dark" if dark else "light"]
+    t = THEME_VARS
 
     st.markdown(
         f"""

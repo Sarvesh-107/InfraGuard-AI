@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import streamlit as st
 
-from components.styles import init_theme, is_dark_mode
-
 NAV_ITEMS = [
     {"id": "home", "label": "Overview", "page": "Home.py"},
     {"id": "ews", "label": "Early Warning", "page": "pages/1_Early_Warning.py"},
@@ -18,21 +16,18 @@ NAV_ITEMS = [
 
 
 def render_navbar(current_page: str) -> None:
-    """Render a full-width navy slip with white tabs, | spacers, and theme toggle."""
-    init_theme()
-    dark = is_dark_mode()
-
+    """Render a full-width navy slip with white tabs and | spacers."""
     with st.container():
         st.markdown('<div class="navy-bar-anchor"></div>', unsafe_allow_html=True)
 
         weights = [
             0.95, 0.12, 1.25, 0.12, 1.25, 0.12, 0.9, 0.12,
-            1.2, 0.12, 0.85, 0.12, 1.05, 0.12, 1.15, 1.5,
+            1.2, 0.12, 0.85, 0.12, 1.05,
         ]
         cols = st.columns(weights)
 
         tab_slots = [0, 2, 4, 6, 8, 10, 12]
-        divider_slots = [1, 3, 5, 7, 9, 11, 13]
+        divider_slots = [1, 3, 5, 7, 9, 11]
 
         for idx, item in enumerate(NAV_ITEMS):
             is_active = current_page == item["id"]
@@ -49,15 +44,3 @@ def render_navbar(current_page: str) -> None:
         for d_idx in divider_slots:
             with cols[d_idx]:
                 st.markdown('<div class="topbar-divider">|</div>', unsafe_allow_html=True)
-
-        with cols[14]:
-            toggle_label = "Light Mode" if dark else "Dark Mode"
-            if st.button(
-                toggle_label,
-                key="topnav_darkmode_toggle",
-                use_container_width=True,
-                type="secondary",
-                help="Toggle light / dark theme",
-            ):
-                st.session_state.dark_mode = not dark
-                st.rerun()

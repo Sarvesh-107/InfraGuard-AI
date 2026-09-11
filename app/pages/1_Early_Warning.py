@@ -10,7 +10,7 @@ import streamlit as st
 
 from components.filters import render_filter_bar, reset_filters_button
 from components.layout import setup_page
-from components.styles import glass_divider, is_dark_mode
+from components.styles import glass_divider
 from data_loader import month, load_projects
 from risk_engine import RISK_COLORS
 
@@ -60,9 +60,8 @@ table = filtered[
     ]
 ].reset_index(drop=True)
 
-dark = is_dark_mode()
-ink = "#FAFAFA" if dark else "#31333F"
-track = "#3A3D46" if dark else "#D5D7DE"
+ink = "#31333F"
+track = "#D5D7DE"
 
 
 def risk_bar(score, tier):

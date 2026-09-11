@@ -4,8 +4,7 @@ Guards against the bug class reported once: the navbar (or a whole other page's
 content) rendering twice on one page -- e.g. the shared component being invoked more
 than once per page, or leftover markup from a different page's script not being
 cleared between renders. Runs each page's actual script via Streamlit's own
-AppTest harness (no browser needed) and asserts every nav item + the dark-mode
-toggle appears exactly once.
+AppTest harness (no browser needed) and asserts every nav item appears exactly once.
 
     python test_navbar.py
 """
@@ -25,8 +24,9 @@ PAGES = [
     "pages/6_Assistant.py",
 ]
 
-# every nav tab label + the theme toggle -- the full set render_navbar() puts on screen
-EXPECTED_LABELS = [item["label"] for item in NAV_ITEMS] + ["Dark Mode"]
+# every nav tab label -- the full set render_navbar() puts on screen. No theme
+# toggle: the app is light-mode only, with no "Dark Mode" button to expect.
+EXPECTED_LABELS = [item["label"] for item in NAV_ITEMS]
 
 
 def _navbar_button_counts(page_path):

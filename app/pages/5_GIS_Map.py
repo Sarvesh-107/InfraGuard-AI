@@ -10,7 +10,6 @@ from streamlit_folium import st_folium
 
 from components.filters import render_filter_bar, reset_filters_button
 from components.layout import setup_page
-from components.styles import is_dark_mode
 from data_loader import _ensure_lat_lon, load_projects
 from risk_engine import RISK_COLORS
 
@@ -182,8 +181,7 @@ st.caption(
     "positions are not the projects' real-world coordinates."
 )
 
-dark = is_dark_mode()
-tile_style = "OpenStreetMap" if dark else "OpenStreetMap"
+tile_style = "OpenStreetMap"
 
 with st.container(border=True):
     with st.spinner("Rendering map…"):
