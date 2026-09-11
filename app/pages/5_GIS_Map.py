@@ -76,6 +76,12 @@ if not filtered.empty and "latitude" in filtered.columns and "longitude" in filt
 else:
     center_lat, center_lon = 20.5937, 78.9629
 
+st.caption(
+    "Pin locations are illustrative approximations (placed randomly within each "
+    "project's state) -- the source data has no surveyed latitude/longitude, so "
+    "positions are not the projects' real-world coordinates."
+)
+
 dark = is_dark_mode()
 tile_style = "OpenStreetMap" if dark else "OpenStreetMap"
 
