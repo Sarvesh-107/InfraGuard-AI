@@ -77,7 +77,7 @@ else:
     center_lat, center_lon = 20.5937, 78.9629
 
 dark = is_dark_mode()
-tile_style = "CartoDB dark_matter" if dark else "CartoDB positron"
+tile_style = "OpenStreetMap" if dark else "OpenStreetMap"
 
 with st.container(border=True):
     m = folium.Map(
