@@ -111,15 +111,18 @@ with st.container(border=True):
         pid = str(row.get("project_id", ""))
         score = float(row.get("risk_score", 0.0))
 
+        # Note: no link to Project Detail here -- st_folium renders the map inside an
+        # iframe, so an <a target="_self"> navigates the iframe's own document, not the
+        # parent Streamlit app. Selecting a row in the table below the map is what
+        # actually opens Project Detail (see st.switch_page call further down).
         popup_html = f"""
         <div style="font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.5; color: #0f172a; min-width: 200px;">
             <strong style="font-size: 14px; display: block; margin-bottom: 4px;">{pname}</strong>
             <span style="color: #475569; font-size: 12px; display: block; margin-bottom: 6px;">{pid} &middot; {pmin}</span>
-            <div style="margin-bottom: 10px;">
+            <div>
                 Risk Tier: <span style="background-color: {color_hex}; color: #ffffff; padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 11px;">{tier}</span>
                 <span style="font-weight: 600; margin-left: 4px;">({score:.1f})</span>
             </div>
-            <a href="/Project_Detail?project_id={pid}" target="_self" style="display: inline-block; padding: 5px 12px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 12px;">View Details</a>
         </div>
         """
 
@@ -137,3 +140,29 @@ with st.container(border=True):
         returned_objects=[],
         use_container_width=True,
     )
+
+st.subheader("Filtered projects")
+st.caption("Select a row to open its full Project Detail page.")
+
+table = filtered[["project_id", "project_name", "sector", "state", "risk_tier"]].reset_index(drop=True)
+
+event = st.dataframe(
+    table,
+    hide_index=True,
+    on_select="rerun",
+    selection_mode="single-row",
+    height=400,
+    key="gis_map_table",
+    column_config={
+        "project_id": "Project ID",
+        "project_name": st.column_config.TextColumn("Project name", width="large"),
+        "sector": "Sector (department)",
+        "state": "State/UT",
+        "risk_tier": "Risk tier",
+    },
+)
+
+rows = event.selection.rows
+if rows:
+    st.session_state["selected_project_id"] = str(table.iloc[rows[0]].project_id)
+    st.switch_page("pages/2_Project_Detail.py")
