@@ -1,0 +1,28 @@
+{
+  "delay_diagnosis": {
+    "baseline: predict 0": {
+      "mae": 40.03962344693005,
+      "r2": -0.9537420123151854
+    },
+    "baseline: global median": {
+      "mae": 26.704811467734697,
+      "r2": -0.0021909731741769356
+    },
+    "TRIVIAL: delay so far + median remainder": {
+      "mae": 7.30280339452501,
+      "r2": 0.5493553975756083
+    },
+    "tuned random forest": {
+      "mae": 6.12321247719963,
+      "r2": 0.7612439945295405
+    }
+  },
+  "cost_diagnosis": {
+    "further_positive_projects": 16,
+    "total_projects": 278
+  },
+  "headline": {
+    "missed_declared_date": 249,
+    "of_projects": 278
+  }
+}
