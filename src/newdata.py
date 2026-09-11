@@ -77,6 +77,13 @@ SECTOR_ALIAS = {
     "ROAD TRANSPORT AND": "ROAD TRANSPORT AND HIGHWAYS",
     "HIGHWAYS": "ROAD TRANSPORT AND HIGHWAYS",
     "TELECOMMUNICA": "TELECOMMUNICATIONS",
+    # Checked across all 36 raw exports: "DEPARTMENT OF" is the only truncated
+    # "DEPARTMENT..." value that ever appears (2644 distinct raw sector strings
+    # total), and every project_code that shows it also shows the full
+    # "DEPARTMENT OF HIGHER EDUCATION" in some other month -- no other department
+    # (school education, water resources, etc.) collides with this prefix. Safe as
+    # a single generic key; re-check if a differently-truncated "DEPARTMENT..."
+    # value ever shows up in a new export.
     "DEPARTMENT OF": "DEPARTMENT OF HIGHER EDUCATION",
     # 2 rows where three sector names ran together -- unresolvable, so left blank
     # rather than guessed into one of them.
@@ -120,7 +127,10 @@ def _read(path, kind):
 
 
 def load(verbose=True):
-    """-> (ongoing, completed, added) tidy frames."""
+    """-> (ongoing, completed, added) tidy frames. `completed` is sorted by
+    (project_code, period) ascending, so a caller doing
+    drop_duplicates("project_code", keep="first") gets the chronologically
+    earliest completion, not whichever export file sorted first alphabetically."""
     frames = {"ongoing": [], "completed": [], "added": [], "skipped": []}
     for p in sorted(DATA.glob("*.csv")):
         per = _period_from_name(p.name)
@@ -160,7 +170,15 @@ def load(verbose=True):
     # a reported 0% after real progress is a reporting glitch, not works undone
     ong.loc[(ong.physical_progress_pct == 0) & (best > 20), "physical_progress_pct"] = np.nan
     ong.loc[ong.physical_progress_pct.isna() & ~(best > 0.5), "physical_progress_pct"] = 0.0
-    comp = pd.concat(frames["completed"], ignore_index=True)
+    # DATA.glob() + sorted() orders files ALPHABETICALLY, not chronologically
+    # ("...April_2025.csv" < "...December_2024.csv"), so a project completed in
+    # more than one monthly export would keep whichever file happened to sort
+    # first -- not its true earliest completion month -- wherever a caller later
+    # does drop_duplicates("project_code") on this frame. `period` is parsed from
+    # each file's actual year/month (zero-padded "YYYY-MM", see
+    # _period_from_name), so sorting by it string-sorts chronologically too.
+    comp = (pd.concat(frames["completed"], ignore_index=True)
+              .sort_values(["project_code", "period"]).reset_index(drop=True))
     add = pd.concat(frames["added"], ignore_index=True)
 
     # 'Revised' N.A. means not revised -> the effective plan of record is the

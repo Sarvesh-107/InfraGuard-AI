@@ -46,7 +46,9 @@ def build():
     """One row per (completed project, as-of snapshot before it commissioned)."""
     ong, comp, add = newdata.load(verbose=False)
     f, _ = panel_v2.feature_frame()
-    c = comp.drop_duplicates("project_code").copy()
+    # sort_values("period") here even though newdata.load() already returns comp
+    # pre-sorted: keeps this call correct on its own if that contract ever changes.
+    c = comp.sort_values("period").drop_duplicates("project_code", keep="first").copy()
     c["done_mo"] = c.period.map(panel_v2._mo)
     c["done_date"] = pd.to_datetime(c.period + "-01")
 

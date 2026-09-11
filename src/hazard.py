@@ -40,7 +40,9 @@ def build_hazard_panel():
     periods = sorted(f.mo.unique())
     nxt = {m: n for m, n in zip(periods, periods[1:])}
 
-    done = (comp.drop_duplicates("project_code")
+    # sort_values("period") here even though newdata.load() already returns comp
+    # pre-sorted: keeps this call correct on its own if that contract ever changes.
+    done = (comp.sort_values("period").drop_duplicates("project_code", keep="first")
             .assign(done_mo=lambda d: d.period.map(panel_v2._mo))
             .set_index("project_code").done_mo)
     f = f.copy()

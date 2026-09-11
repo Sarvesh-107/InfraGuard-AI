@@ -28,6 +28,11 @@ def reasons(r):
         o.append(f"no physical progress for {r.f_stall_run:.0f} consecutive reports")
     if pd.notna(r.f_feasibility) and 0 <= r.f_feasibility < 0.5:
         o.append(f"pace is {r.f_feasibility:.0%} of what the current date needs")
+    elif pd.notna(r.f_mo_remaining) and r.f_mo_remaining <= 0:
+        # f_required_vel/f_feasibility are NaN here by design (see panel_v2.py) --
+        # there's no forward-looking pace target once the current plan date has
+        # already passed, so say that plainly instead of staying silent on it.
+        o.append("already past planned completion, no revised pace available")
     if r.f_progress_gap > 15:
         o.append(f"spend outruns works by {r.f_progress_gap:.0f}pp")
     if r.f_n_doc_changes >= 2:

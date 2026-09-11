@@ -71,6 +71,24 @@ def feature_frame(max_period=None):
     ong["f_months_past_doc"] = (asof - ong.doc_original).dt.days / 30.44
     ong["f_overdue"] = (ong.f_months_past_doc > 0).astype(int)
     ong["f_mo_remaining"] = (ong.effective_doc - asof).dt.days / 30.44
+    # f_required_vel is undefined (NaN) once the project is past even its current plan
+    # (f_mo_remaining <= 0) -- there is no forward window left to divide by. Two ways to
+    # handle that were considered:
+    #   (a) substitute a fixed "should have finished by now" reference pace (e.g.
+    #       remaining progress / months already overdue) so the feature stays numeric
+    #       for every row, clearly flagged as a different regime.
+    #   (b) leave it NaN here (mathematically honest -- there is no real "pace still
+    #       needed" once the target date is in the past) and give score_v2.reasons() a
+    #       distinct reason code for this case instead.
+    # Went with (b): f_required_vel/f_feasibility feed the model as plain f_* features
+    # (train_v2.load_panel() picks up every f_ column), so a synthetic proxy pace would
+    # quietly become a model input with no real-world meaning, need retraining to
+    # validate, and risk officers reading it as directly comparable to the real
+    # remaining-time-based number on other rows. NaN costs nothing model-side (XGBoost
+    # treats missing values as a legitimate, learnable signal) and matches this
+    # codebase's stance elsewhere (src/newdata.py's CORRUPT set) of declaring a gap
+    # rather than inventing a number to fill it. See score_v2.reasons() for the
+    # diagnostic this produces instead.
     ong["f_required_vel"] = ((100 - ong.f_progress)
                              / ong.f_mo_remaining.where(ong.f_mo_remaining > 0))
     # feasibility: what the plan demands vs what the project has actually done
@@ -111,8 +129,11 @@ def build(horizon=HORIZON):
 
     # A project that left the roster because it COMMISSIONED is a success, not an
     # escalation: label it negative instead of dropping it with the unexplained exits.
-    done = comp.assign(mo=comp.period.map(_mo))[["project_code", "mo"]] \
-               .rename(columns={"mo": "done_mo"}).drop_duplicates("project_code")
+    # sort_values("period") here even though newdata.load() already returns comp
+    # pre-sorted: keeps this call correct on its own if that contract ever changes.
+    done = comp.assign(mo=comp.period.map(_mo))[["project_code", "period", "mo"]] \
+               .sort_values("period").drop_duplicates("project_code", keep="first") \
+               .drop(columns="period").rename(columns={"mo": "done_mo"})
     p = p.merge(done, on="project_code", how="left")
     completes_in_window = (p.done_mo > p.mo) & (p.done_mo <= p.mo + horizon)
     p.loc[completes_in_window & ~p.has_future, ["y_cost_esc", "y_time_esc", "y_adverse"]] = 0

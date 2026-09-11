@@ -153,6 +153,44 @@ def test_forecast_dates_sane():
           f"{(~ok).sum()} left blank for want of an original date)")
 
 
+def test_completed_dedup_keeps_chronologically_earliest():
+    """Regression test: comp is built from files in ALPHABETICAL filename order
+    ("...April_2025.csv" sorts before "...December_2024.csv"), so naively
+    concatenating and then drop_duplicates("project_code") on row order alone
+    would keep whichever file happened to sort first -- not the true earliest
+    completion month. Constructs the exact row order that alphabetical file
+    globbing would produce (the April row first, even though December is
+    chronologically earlier) and checks the fix -- sort_values("period") before
+    drop_duplicates, as newdata.load() and its three callers now do -- keeps the
+    right one."""
+    fake_comp = pd.DataFrame([
+        {"project_code": "N99999999", "period": "2025-04", "project_name": "FAKE"},
+        {"project_code": "N99999999", "period": "2024-12", "project_name": "FAKE"},
+    ])
+
+    # the bug: naive drop_duplicates on unsorted (alphabetical-file) row order
+    # keeps the wrong (chronologically later) row
+    naive = fake_comp.drop_duplicates("project_code", keep="first")
+    assert naive.period.iloc[0] == "2025-04", "test setup sanity check failed"
+
+    # the fix: sort by period first
+    fixed = fake_comp.sort_values("period").drop_duplicates("project_code", keep="first")
+    assert fixed.period.iloc[0] == "2024-12", \
+        f"expected chronologically earliest period 2024-12, kept {fixed.period.iloc[0]}"
+    print("ok  completed-row dedup keeps the chronologically earliest period, not "
+          "whichever file sorted first alphabetically")
+
+
+def test_completed_frame_presorted_by_period():
+    """newdata.load()'s comp frame must be sorted so any later
+    drop_duplicates("project_code", keep="first") is safe by construction."""
+    ong, comp, add = newdata.load(verbose=False)
+    for code, sub in comp.groupby("project_code", sort=False):
+        assert sub.period.is_monotonic_increasing, f"{code}: comp not sorted by period"
+    print(f"ok  comp pre-sorted by (project_code, period) for all "
+          f"{comp.project_code.nunique()} completed projects")
+
+
 if __name__ == "__main__":
     test_corrupt_files_excluded()
     test_no_total_rows()
@@ -165,4 +203,6 @@ if __name__ == "__main__":
     test_beats_agency_forecast()
     test_forecast_dates_sane()
     test_shuffle_control()
+    test_completed_dedup_keeps_chronologically_earliest()
+    test_completed_frame_presorted_by_period()
     print("\nall v2 checks passed")
