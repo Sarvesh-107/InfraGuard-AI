@@ -83,7 +83,7 @@ st.caption(
 )
 
 dark = is_dark_mode()
-tile_style = "CartoDB dark_matter" if dark else "CartoDB positron"
+tile_style = "OpenStreetMap" if dark else "OpenStreetMap"
 
 with st.container(border=True):
     m = folium.Map(
