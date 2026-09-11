@@ -129,6 +129,12 @@ def _lookup_state_coords(state: str | None, pname: str) -> tuple[str | None, tup
 
 
 def _ensure_lat_lon(df: pd.DataFrame) -> pd.DataFrame:
+    # Every project gets a jittered-random point (never a real one): the live PAIMANA
+    # portal's POST /Home/GetTileData was investigated (scripts/fetch_paimana_coords.py)
+    # and confirmed to have no lat/lon or district/taluk field on any project record,
+    # and its numeric ProjectId has no join key back to this CSV's project_id -- there is
+    # nothing to map real coordinates from. Don't re-investigate; re-run that script only
+    # if GetTileData's schema is later reported to have changed.
     if "latitude" in df.columns and "longitude" in df.columns:
         return df
 
@@ -184,6 +190,16 @@ def load_projects() -> pd.DataFrame:
     asof_ts = pd.Timestamp(asof + "-01")
     out = df.copy()
     out["project_id"] = out["project_code"].astype(str)
+    # Sector-as-ministry placeholder, not a real ministry field. Investigated
+    # (scripts/fetch_paimana_ministry.py): the live portal's LineMinistry field has
+    # perfect coverage (100% of records), but there's no id to join it to this CSV's
+    # project_code by (see fetch_paimana_coords.py), and a normalized-name join only
+    # matches 8.2% of our projects -- the two sides genuinely list the same projects
+    # (confirmed for Manipur's Tamenglong-Mahur road packages) but under completely
+    # different naming conventions, with near-duplicate package variants (PKG-4A vs
+    # 4B) that a fuzzy matcher could easily assign to the wrong project. Not worth
+    # the risk of silently-wrong ministries for ~8% coverage -- don't re-investigate,
+    # only re-run that script if the live site adds a stable cross-reference id.
     out["ministry"] = out["sector"]
     out["last_updated"] = asof_ts
     out = _ensure_lat_lon(out)
