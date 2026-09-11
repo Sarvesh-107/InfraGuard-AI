@@ -19,8 +19,8 @@ setup_page(
 cards, _, asof_label = load_forecast_cards()
 
 st.caption(
-    "Local open-source model (Ollama / llama3). If the model isn't running you get a quick "
-    "summary instead. The first answer can take up to a minute."
+    "Cloud model (Groq / GPT-OSS 120B). If the API key is missing or the service is "
+    "unavailable, you get a quick summary instead."
 )
 glass_divider()
 
@@ -36,7 +36,14 @@ if "assistant_prefill" in st.session_state:
 else:
     default_q = ""
 
+st.session_state.setdefault("assistant_history", [])
+st.session_state.setdefault("assistant_last_pick", "(write your own)")
+
 pick = st.radio("Example questions", ["(write your own)"] + examples, horizontal=True)
+if pick != "(write your own)" and pick != st.session_state.assistant_last_pick:
+    # a fresh example topic -- follow-up context from the previous topic no longer applies
+    st.session_state.assistant_history = []
+st.session_state.assistant_last_pick = pick
 if pick != "(write your own)" and not default_q:
     default_q = pick
 
@@ -45,15 +52,17 @@ with st.form("ask"):
     asked = st.form_submit_button("Ask")
 
 if asked and q.strip():
-    gen, meta = assistant.answer_stream(q, cards, asof_label)
+    gen, meta = assistant.answer_stream(q, cards, asof_label, history=st.session_state.assistant_history)
     with st.container(border=True):
         st.markdown(f"**Q:** {q}")
-        with st.spinner("Finding the matching projects… the first answer can take a minute"):
+        with st.spinner("Finding the matching projects…"):
             text = st.write_stream(gen)
         st.caption(
             f"Source: {meta['source']} · filter: {meta['filter']} · matched projects: {meta['matched']}"
         )
     st.session_state.ai_result = (q, {"answer": text, **meta})
+    st.session_state.assistant_history.append({"question": q, "filter": meta["filter"]})
+    st.session_state.assistant_history = st.session_state.assistant_history[-assistant.HISTORY_CAP:]
 elif "ai_result" in st.session_state:
     q_, r = st.session_state.ai_result
     with st.container(border=True):
