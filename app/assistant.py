@@ -50,12 +50,14 @@ def _mentions(question, values):
 
 
 # question intent -> (sort column, ascending, label). Checked in order; first match wins.
+# each alternative is written to also match the obvious plural/verb-form variant of its
+# trigger word (e.g. "cost overrun" -> also "cost overruns"), not just the exact phrase.
 _SORT_RULES = [
-    (re.compile(r"\bdelayed?\b|\bslip(?:s|ped|ping|page)?\b|\bbehind schedule\b|\blate\b", re.I),
+    (re.compile(r"\bdelay(?:s|ed|ing)?\b|\bslip(?:s|ped|ping|pages?)?\b|\bbehind schedule\b|\blate\b", re.I),
      "slip_p50_mo", False, "most delayed"),
-    (re.compile(r"\bcost overrun\b|\bover budget\b|\bescalation\b|\bexpensive\b", re.I),
+    (re.compile(r"\bcost overruns?\b|\bover budget\b|\bescalations?\b|\bexpensive\b", re.I),
      "cost_variance_pct", False, "highest cost overrun"),
-    (re.compile(r"\bstalled\b|\bno progress\b|\bbehind on progress\b|\bleast progress\b", re.I),
+    (re.compile(r"\bstall(?:ed|ing)?\b|\bno progress\b|\bbehind on progress\b|\bleast progress\b", re.I),
      "physical_progress_pct", True, "least progress"),
 ]
 _DEFAULT_SORT = ("risk_score", False, "highest risk")

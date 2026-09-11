@@ -1,6 +1,7 @@
-"""Checks for assistant.py's question -> sort-column mapping, list/count-question
-handling (row cap, answer rules), short-term history formatting, the empty-result
-risk-tier retry fallback, and the templated _fallback() answer's row selection.
+"""Checks for assistant.py's question -> sort-column mapping (including plural/verb-form
+trigger variants), list/count-question handling (row cap, answer rules), short-term
+history formatting, the empty-result risk-tier retry fallback, and the templated
+_fallback() answer's row selection.
 
     python test_assistant.py
 """
@@ -43,6 +44,23 @@ def test_progress_intent_sorts_by_progress_ascending():
     assert col == "physical_progress_pct" and ascending is True
     assert "sort: least progress first" in applied
     print("ok  'stalled' -> physical_progress_pct ascending")
+
+
+def test_sort_intent_matches_plural_and_verb_form_variants():
+    # regression: these previously fell through to the risk_score default because the
+    # trigger regexes required the exact singular/adjective form
+    cases = [
+        ("Biggest cost overruns in Railways", "cost_variance_pct", False),
+        ("Which projects have the largest cost escalations?", "cost_variance_pct", False),
+        ("Which Railways projects have delays?", "slip_p50_mo", False),
+        ("Which projects show the biggest slips?", "slip_p50_mo", False),
+        ("Which NHAI projects are stalling?", "physical_progress_pct", True),
+    ]
+    for question, expected_col, expected_ascending in cases:
+        _, applied, col, ascending = A.retrieve(question, _DF)
+        assert col == expected_col, f"{question!r}: expected {expected_col}, got {col}"
+        assert ascending is expected_ascending, f"{question!r}: expected ascending={expected_ascending}"
+    print("ok  plural/verb-form variants of each sort trigger are matched")
 
 
 def test_context_block_sorts_by_chosen_column():
@@ -198,6 +216,7 @@ if __name__ == "__main__":
     test_delay_intent_sorts_by_slip()
     test_cost_intent_sorts_by_cost_variance_pct()
     test_progress_intent_sorts_by_progress_ascending()
+    test_sort_intent_matches_plural_and_verb_form_variants()
     test_context_block_sorts_by_chosen_column()
     test_list_question_detects_count_and_enumeration_intents()
     test_context_block_row_cap_expands_for_list_questions()
