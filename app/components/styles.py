@@ -369,6 +369,26 @@ def inject_custom_css() -> None:
             box-shadow: var(--card-shadow);
             padding: var(--space-card-y) var(--space-card-x);
             min-height: 6.2rem;
+            height: 100%;
+            box-sizing: border-box;
+        }}
+        /* Home's 6-across KPI row: at ~1024px each card narrows to ~134px, wrapping
+        values like "Predicted final cost" / "Rs 25.05 lakh cr" onto a 2nd line while
+        shorter cards ("36 mo", "131") stay on one -- a visibly ragged, uneven-height
+        row (measured: 130-180px tall across the same row). Reflow to 2 rows of 3
+        below 1100px instead, so every card gets ~2x the width and fits its value on
+        one line. Scoped to the KPI row specifically via :has(), not every
+        st.columns() row on the page. */
+        @media (max-width: 1100px) {{
+            [data-testid="stHorizontalBlock"]:has(.kpi-glass) {{
+                flex-wrap: wrap !important;
+                row-gap: 0.9rem !important;
+            }}
+            [data-testid="stHorizontalBlock"]:has(.kpi-glass) [data-testid="stColumn"] {{
+                flex: 1 1 30% !important;
+                min-width: 30% !important;
+                width: 30% !important;
+            }}
         }}
         .kpi-label {{
             margin-bottom: 0.35rem;

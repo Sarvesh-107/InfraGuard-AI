@@ -105,6 +105,17 @@ def _latest_cards_path() -> Path:
     return cards[-1]
 
 
+def projects_version() -> float:
+    """Cheap (just a filesystem stat, no read) cache key for "the current
+    load_projects() data": changes iff a new forecast_cards_*.csv ships. Used
+    instead of the projects DataFrame itself as an apply_filters() cache key --
+    st.cache_data returns a fresh copy on every call (even on a cache hit, verified:
+    the returned object's id() differs every rerun), so hashing/keying on the
+    DataFrame's identity doesn't work across reruns, and hashing its full ~1,595-row
+    content costs more (~8ms, measured) than just recomputing the filter (~2-3ms)."""
+    return _latest_cards_path().stat().st_mtime
+
+
 def asof_from_cards_path(path: Path | None = None) -> tuple[str, str]:
     path = path or _latest_cards_path()
     asof = path.stem.rsplit("_", 1)[-1]
@@ -184,9 +195,17 @@ def load_forecast_cards() -> tuple[pd.DataFrame, str, str]:
 
 
 @st.cache_data(show_spinner=False)
-def load_projects() -> pd.DataFrame:
-    """GIS-compatible view of the latest forecast cards."""
-    df, asof, _ = load_forecast_cards()
+def _build_projects(path: str, mtime: float) -> pd.DataFrame:
+    """The expensive part of load_projects() -- notably _ensure_lat_lon()'s per-row
+    jitter loop (~185ms over 1,595 rows, measured) -- keyed on the same (path, mtime)
+    _load_cards() uses, so it's computed once per underlying file version and never
+    recomputed on an unrelated rerun (a filter change, a widget click, etc.), but still
+    invalidates itself automatically the day a new forecast_cards_*.csv ships. Split
+    from load_projects() because *that* function's own cache had no such key -- an
+    @st.cache_data with no invalidation-relevant argument caches forever, so it would
+    have kept serving the FIRST month's cards even after a new export landed."""
+    df = _load_cards(path, mtime)
+    asof, _ = asof_from_cards_path(Path(path))
     asof_ts = pd.Timestamp(asof + "-01")
     out = df.copy()
     out["project_id"] = out["project_code"].astype(str)
@@ -204,6 +223,12 @@ def load_projects() -> pd.DataFrame:
     out["last_updated"] = asof_ts
     out = _ensure_lat_lon(out)
     return out
+
+
+def load_projects() -> pd.DataFrame:
+    """GIS-compatible view of the latest forecast cards."""
+    path = _latest_cards_path()
+    return _build_projects(str(path), path.stat().st_mtime)
 
 
 @st.cache_data(show_spinner=False)
@@ -226,8 +251,12 @@ def report_mtimes() -> tuple:
     return tuple((REPORTS / f).stat().st_mtime for f in names)
 
 
+@st.cache_data(show_spinner=False)
 def load_drivers(mtime: float | None):
     """Feature importances from the trained XGBoost pipeline, if it can be loaded.
+    Cached on the model file's mtime (already computed by the caller): unpickling
+    the model and running feature_names/feature_importances_ over it is real,
+    non-trivial work that was previously redone on every Models-page rerun.
 
     Returns None when the pickle is missing or optional ML deps (joblib / sklearn /
     xgboost) are not installed — the Models page still works from saved reports.
@@ -263,8 +292,10 @@ def load_drivers(mtime: float | None):
     )
 
 
+@st.cache_data(show_spinner=False)
 def apply_filters(
-    df: pd.DataFrame,
+    _df: pd.DataFrame,
+    version,
     ministries: list[str] | None = None,
     sectors: list[str] | None = None,
     risk_tiers: list[str] | None = None,
@@ -272,6 +303,16 @@ def apply_filters(
     date_to=None,
     search: str | None = None,
 ) -> pd.DataFrame:
+    """Recomputed on every widget change in the filter popover, so it's the one
+    function actually re-run on nearly every rerun. Measured ~2-3ms uncached on the
+    1,595-row portfolio, which is already fast -- but the naive cache (hashing _df's
+    full contents on every call) cost ~8ms just to check for a hit, a net LOSS.
+    `_df` (leading underscore -> Streamlit never hashes it) plus the cheap `version`
+    key (see projects_version()) avoids that entirely: a cache hit costs ~0.4ms,
+    ~5-7x faster than uncached. Caching by _df's own identity doesn't work here --
+    st.cache_data returns a fresh copy (new id()) on every call, hit or miss, so
+    load_projects()'s output has a different id() every rerun regardless."""
+    df = _df
     filtered = df.copy()
 
     if ministries:

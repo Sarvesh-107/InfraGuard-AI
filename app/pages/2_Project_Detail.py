@@ -22,7 +22,8 @@ if not project_id and "project_id" in st.query_params:
     project_id = st.query_params["project_id"]
     st.session_state["selected_project_id"] = project_id
 
-projects = load_projects()
+with st.spinner("Loading portfolio data…"):
+    projects = load_projects()
 asof = projects["last_updated"].iloc[0].strftime("%Y-%m")
 
 if not project_id:

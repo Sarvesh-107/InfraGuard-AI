@@ -8,7 +8,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from components.filters import render_filter_bar
+from components.filters import render_filter_bar, reset_filters_button
 from components.layout import setup_page
 from components.styles import glass_divider, is_dark_mode
 from data_loader import month, load_projects
@@ -21,11 +21,13 @@ setup_page(
     page_title="Early Warning | PAIMANA AI",
 )
 
-projects = load_projects()
+with st.spinner("Loading portfolio data…"):
+    projects = load_projects()
 filtered = render_filter_bar(projects, key_prefix="ews", show_search=True)
 
 if filtered.empty:
     st.info("No projects match your filters.")
+    reset_filters_button("ews")
     st.stop()
 
 asof = projects["last_updated"].iloc[0].strftime("%Y-%m")

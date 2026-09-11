@@ -18,7 +18,8 @@ setup_page(
     page_title="Models | PAIMANA AI",
 )
 
-oof, ends, cost, comp = load_reports(report_mtimes())
+with st.spinner("Loading model reports…"):
+    oof, ends, cost, comp = load_reports(report_mtimes())
 yax = alt.Axis(labelLimit=340)
 
 st.markdown(
@@ -127,7 +128,8 @@ with c2:
         model_path = MODELS / "escalation_xgb_v2.joblib"
         mtime = model_path.stat().st_mtime if model_path.exists() else None
         try:
-            dr = load_drivers(mtime)
+            with st.spinner("Loading model…"):
+                dr = load_drivers(mtime)
         except Exception:
             dr = None
         if dr is None:

@@ -5,7 +5,7 @@ import bootstrap  # noqa: F401
 import altair as alt
 import streamlit as st
 
-from components.filters import render_filter_bar
+from components.filters import render_filter_bar, reset_filters_button
 from components.layout import setup_page
 from data_loader import load_projects
 from risk_engine import RISK_COLORS
@@ -17,11 +17,13 @@ setup_page(
     page_title="Benchmarking | PAIMANA AI",
 )
 
-projects = load_projects()
+with st.spinner("Loading portfolio data…"):
+    projects = load_projects()
 view = render_filter_bar(projects, key_prefix="bench", show_search=True)
 
 if view.empty:
     st.info("No projects match your filters.")
+    reset_filters_button("bench")
     st.stop()
 
 yax = alt.Axis(labelLimit=340)

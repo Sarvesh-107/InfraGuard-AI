@@ -7,8 +7,21 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
-from data_loader import apply_filters
+from data_loader import apply_filters, projects_version
 from risk_engine import TIERS
+
+
+FILTER_WIDGET_SUFFIXES = ("ministry", "sector", "tier", "dates", "search")
+
+
+def reset_filters_button(key_prefix: str, label: str = "Reset filters") -> None:
+    """One-click clear for every widget render_filter_bar(key_prefix=...) owns --
+    for the empty-state case ("no projects match"), so the user has an actual way
+    out instead of having to manually reopen the popover and clear each field."""
+    if st.button(label, key=f"{key_prefix}_reset_filters_btn"):
+        for suffix in FILTER_WIDGET_SUFFIXES:
+            st.session_state.pop(f"{key_prefix}_{suffix}", None)
+        st.rerun()
 
 
 def render_filter_bar(
@@ -92,6 +105,7 @@ def render_filter_bar(
 
     return apply_filters(
         df,
+        projects_version(),
         ministries=sel_ministries or None,
         sectors=sel_sectors or None,
         risk_tiers=sel_tiers or None,

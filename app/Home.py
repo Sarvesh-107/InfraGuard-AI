@@ -5,7 +5,7 @@ import bootstrap  # noqa: F401
 import altair as alt
 import streamlit as st
 
-from components.filters import render_filter_bar
+from components.filters import render_filter_bar, reset_filters_button
 from components.kpi_card import render_kpi_row
 from components.layout import setup_page
 from components.styles import glass_divider, page_header
@@ -17,7 +17,8 @@ setup_page(
     page_title="PAIMANA AI | InfraGuard",
 )
 
-projects = load_projects()
+with st.spinner("Loading portfolio data…"):
+    projects = load_projects()
 asof_label = projects["last_updated"].iloc[0].strftime("%B %Y")
 
 title_col, filter_col = st.columns([4.2, 1.15], gap="large")
@@ -32,6 +33,7 @@ with filter_col:
 
 if filtered.empty:
     st.info("No projects match your filters. Try broadening sector, ministry, or risk tier.")
+    reset_filters_button("home")
     st.stop()
 
 approved = float(filtered["cost_original_cr"].sum())
