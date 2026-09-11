@@ -78,6 +78,26 @@ def inject_custom_css() -> None:
             --accent-soft: {t["accent_soft"]};
             --input-bg: {t["input_bg"]};
             --divider: {t["divider"]};
+
+            /* Design tokens: one shared scale for every card/control on every page,
+            in both themes -- so "consistent spacing/radius" is enforced here once
+            rather than re-guessed per component. */
+            --radius-card: 14px;      /* content cards, popovers, KPI tiles */
+            --radius-control: 12px;   /* buttons, inputs, the nav bar itself */
+            --radius-pill: 9999px;    /* the round filter trigger */
+            --radius-badge: 6px;      /* risk-tier badges */
+            --radius-sm: 8px;         /* inputs, nav-bar tab buttons */
+            --space-card-y: 0.9rem;
+            --space-card-x: 1.1rem;
+
+            /* Typography scale: page title > section subtitle > metric label/value.
+            Centralized so every page's st.subheader()/st.metric() inherits the same
+            hierarchy instead of Streamlit's unstyled defaults (which rendered
+            st.subheader() at 28px/600 -- LARGER than the 24.8px/700 page title). */
+            --font-page-title: 1.55rem;
+            --font-section-title: 1.05rem;
+            --font-metric-label: 0.78rem;
+            --font-metric-value: 1.55rem;
         }}
 
         html, body, [class*="css"] {{
@@ -140,7 +160,7 @@ def inject_custom_css() -> None:
         [data-testid="stElementContainer"]:has(.navy-bar-anchor) + [data-testid="stHorizontalBlock"],
         [data-testid="stElementContainer"]:has(.navy-bar-anchor) + div {{
             background: #0b192c !important;
-            border-radius: 12px !important;
+            border-radius: var(--radius-control) !important;
             padding: 0.28rem 0.55rem !important;
             margin: 0 0 1.05rem 0 !important;
             box-shadow: 0 10px 28px rgba(11, 25, 44, 0.42) !important;
@@ -164,7 +184,7 @@ def inject_custom_css() -> None:
             backdrop-filter: blur(14px) saturate(160%) !important;
             -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
             border: 1px solid var(--glass-btn-border) !important;
-            border-radius: 12px !important;
+            border-radius: var(--radius-control) !important;
             color: var(--text-primary) !important;
             font-weight: 500 !important;
             box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
@@ -211,7 +231,7 @@ def inject_custom_css() -> None:
             font-weight: 500 !important;
             padding: 0.32rem 0.45rem !important;
             min-height: 2.35rem !important;
-            border-radius: 8px !important;
+            border-radius: var(--radius-sm) !important;
             box-shadow: none !important;
             backdrop-filter: none !important;
             -webkit-backdrop-filter: none !important;
@@ -252,7 +272,7 @@ def inject_custom_css() -> None:
         /* Round funnel filter trigger */
         [data-testid="stPopover"] button,
         [data-testid="stPopoverButton"] button {{
-            border-radius: 9999px !important;
+            border-radius: var(--radius-pill) !important;
             padding: 0.42rem 1.15rem 0.42rem 0.95rem !important;
             font-size: 0.84rem !important;
             font-weight: 600 !important;
@@ -286,7 +306,7 @@ def inject_custom_css() -> None:
             backdrop-filter: blur(16px) saturate(160%) !important;
             -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
             border: 1px solid var(--card-border) !important;
-            border-radius: 14px !important;
+            border-radius: var(--radius-card) !important;
             box-shadow: var(--card-shadow) !important;
         }}
 
@@ -304,32 +324,39 @@ def inject_custom_css() -> None:
             backdrop-filter: blur(16px) saturate(150%);
             -webkit-backdrop-filter: blur(16px) saturate(150%);
             border: 1px solid var(--card-border) !important;
-            border-radius: 14px !important;
+            border-radius: var(--radius-card) !important;
             box-shadow: var(--card-shadow) !important;
-            padding: 0.85rem !important;
+            padding: var(--space-card-y) !important;
         }}
 
+        /* Metric label/value: ONE typography rule shared by st.metric() (used
+        directly on some pages) and the .kpi-* card below (used on others) --
+        previously these two metric-card paths had their own slightly different
+        label sizes (0.78rem vs 0.72rem) and letter-spacing. */
         div[data-testid="stMetric"] {{
             background: var(--card-bg-strong) !important;
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
-            border-radius: 12px !important;
-            padding: 0.9rem 1.1rem !important;
+            border-radius: var(--radius-card) !important;
+            padding: var(--space-card-y) var(--space-card-x) !important;
             box-shadow: var(--card-shadow) !important;
             border: 1px solid var(--card-border) !important;
         }}
         div[data-testid="stMetric"] label,
-        div[data-testid="stMetric"] [data-testid="stMetricLabel"] p {{
-            font-size: 0.78rem !important;
+        div[data-testid="stMetric"] [data-testid="stMetricLabel"] p,
+        .kpi-label {{
+            font-size: var(--font-metric-label) !important;
             color: var(--text-muted) !important;
             font-weight: 600 !important;
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.05em;
         }}
         div[data-testid="stMetric"] div[data-testid="stMetricValue"],
-        div[data-testid="stMetric"] div[data-testid="stMetricValue"] * {{
-            font-size: 1.55rem !important;
+        div[data-testid="stMetric"] div[data-testid="stMetricValue"] *,
+        .kpi-value {{
+            font-size: var(--font-metric-value) !important;
             font-weight: 700 !important;
+            letter-spacing: -0.02em;
             color: var(--text-primary) !important;
         }}
 
@@ -338,24 +365,15 @@ def inject_custom_css() -> None:
             backdrop-filter: blur(14px) saturate(160%);
             -webkit-backdrop-filter: blur(14px) saturate(160%);
             border: 1px solid var(--card-border);
-            border-radius: 14px;
+            border-radius: var(--radius-card);
             box-shadow: var(--card-shadow);
-            padding: 0.95rem 1.1rem 0.85rem;
+            padding: var(--space-card-y) var(--space-card-x);
             min-height: 6.2rem;
         }}
         .kpi-label {{
-            font-size: 0.72rem;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: var(--text-muted) !important;
             margin-bottom: 0.35rem;
         }}
         .kpi-value {{
-            font-size: 1.55rem;
-            font-weight: 700;
-            letter-spacing: -0.03em;
-            color: var(--text-primary) !important;
             line-height: 1.2;
         }}
         .kpi-hint {{
@@ -369,14 +387,27 @@ def inject_custom_css() -> None:
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 0.65rem 0.85rem 0.2rem;
+            border-radius: var(--radius-card);
+            padding: 0.65rem var(--space-card-x) 0.2rem;
             margin-bottom: 0.55rem;
             box-shadow: var(--card-shadow);
         }}
 
         h1, h2, h3, h4, h5, h6, p, label, span, li, dt, dd, div {{
             color: var(--text-primary);
+        }}
+
+        /* Section titles (st.subheader()/st.header() render h2/h3) must sit clearly
+        BELOW the page title in the hierarchy -- Streamlit's own default rendered
+        them at 28px/600, larger than the 24.8px/700 page title above them. One rule,
+        applies on every page since every page routes section titles through
+        st.subheader(). */
+        h2, h3 {{
+            font-size: var(--font-section-title) !important;
+            font-weight: 700 !important;
+            letter-spacing: -0.01em !important;
+            margin-top: 0 !important;
+            margin-bottom: 0.35rem !important;
         }}
         .page-subtitle {{
             color: var(--text-secondary) !important;
@@ -394,7 +425,7 @@ def inject_custom_css() -> None:
             background-color: var(--input-bg) !important;
             border-color: var(--card-border) !important;
             color: var(--text-primary) !important;
-            border-radius: 8px !important;
+            border-radius: var(--radius-sm) !important;
         }}
 
         .alert-card {{
@@ -406,7 +437,7 @@ def inject_custom_css() -> None:
         .risk-badge {{
             display: inline-block;
             padding: 0.2rem 0.65rem;
-            border-radius: 6px;
+            border-radius: var(--radius-badge);
             font-size: 0.75rem;
             font-weight: 600;
             color: #fff !important;
@@ -427,7 +458,7 @@ def page_header(title: str, subtitle: str) -> None:
     st.markdown(
         f"""
         <div style="margin-top: 0.1rem; margin-bottom: 0.15rem;">
-            <h1 style="margin-bottom:0.1rem; font-weight:700; font-size:1.55rem; letter-spacing:-0.02em;">{title}</h1>
+            <h1 style="margin-bottom:0.1rem; font-weight:700; font-size:var(--font-page-title); letter-spacing:-0.02em;">{title}</h1>
             <p class="page-subtitle">{subtitle}</p>
         </div>
         """,

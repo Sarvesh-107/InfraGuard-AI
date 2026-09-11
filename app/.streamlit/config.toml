@@ -1,5 +1,8 @@
 [theme]
-primaryColor = "#6366f1"
+# Restrained navy/blue, deliberately not Streamlit's default red or a generic SaaS
+# purple -- matches components/styles.py's --accent so native widgets (checkboxes,
+# radios, sliders) and the custom CSS use the same primary color.
+primaryColor = "#2563eb"
 backgroundColor = "#e8eef7"
 secondaryBackgroundColor = "#ffffff"
 textColor = "#0f172a"
